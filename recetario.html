@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Recetario — Dra. Maribel Ornelas</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Source+Sans+3:wght@300;400;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #6b21a8;
+    --navy-light: #7c3aed;
+    --navy-pale: #f3e8ff;
+    --accent: #a855f7;
+    --text: #2e1065;
+    --muted: #9c7ec4;
+    --border: #e9d5ff;
+    --bg: #faf5ff;
+    --white: #ffffff;
+    --danger: #c0392b;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  html, body {
+    min-height: 100vh;
+    background: var(--bg);
+    font-family: 'Source Sans 3', sans-serif;
+    color: var(--text);
+  }
+
+  /* ─── LAYOUT ─── */
+  .app {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem 4rem;
+  }
+
+  .app-header {
+    width: 100%;
+    max-width: 640px;
+    margin-bottom: 2rem;
+    background: #ede9fe;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.75rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .header-logo {
+    height: 46px;
+    width: auto;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+
+  .header-logo-title {
+    height: 38px;
+    width: auto;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+
+  /* ─── CARD ─── */
+  .card {
+    width: 100%;
+    max-width: 640px;
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 2rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .card-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--navy);
+    border-bottom: 1.5px solid var(--navy-pale);
+    padding-bottom: 8px;
+    margin-bottom: 1.25rem;
+  }
+
+  /* ─── FORM GRID ─── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .grid-3 { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 1rem; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem; }
+
+  .field { display: flex; flex-direction: column; gap: 5px; }
+
+  .field label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .field input, .field select, .field textarea {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 9px 12px;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--white);
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    width: 100%;
+  }
+
+  .field input:focus, .field select:focus, .field textarea:focus {
+    border-color: var(--navy);
+    box-shadow: 0 0 0 3px rgba(26,58,92,0.08);
+  }
+
+  .field textarea { resize: none; line-height: 1.5; }
+
+  .sexo-group {
+    display: flex;
+    gap: 12px;
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    align-items: center;
+    min-height: 40px;
+  }
+
+  .sexo-group label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  .sexo-group input[type="radio"] {
+    accent-color: var(--navy);
+    width: auto;
+  }
+
+  /* ─── PRESCRIPCIONES ─── */
+  .rx-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+
+  .rx-symbol {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    color: var(--navy);
+    font-style: italic;
+  }
+
+  .rx-count {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .rx-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 1.25rem; }
+
+  .rx-item {
+    display: grid;
+    grid-template-columns: 28px 1fr auto;
+    align-items: center;
+    gap: 8px;
+    animation: slideIn 0.2s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .rx-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--navy-pale);
+    color: var(--navy);
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .rx-item input {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 9px 12px;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 13.5px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    width: 100%;
+  }
+
+  .rx-item input:focus {
+    border-color: var(--navy);
+    box-shadow: 0 0 0 3px rgba(26,58,92,0.08);
+  }
+
+  .rx-item input::placeholder { color: #bcc5d0; }
+
+  .btn-remove {
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: var(--white);
+    color: var(--muted);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    line-height: 1;
+  }
+
+  .btn-remove:hover { background: #fdf0ef; color: var(--danger); border-color: #f0c4c0; }
+
+  .btn-remove.hidden { visibility: hidden; pointer-events: none; }
+
+  /* ─── BUTTONS ─── */
+  .btn-add {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px;
+    background: var(--navy-pale);
+    color: var(--navy);
+    border: 1.5px dashed var(--navy-light);
+    border-radius: var(--radius-sm);
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .btn-add:hover { background: #dceaf8; }
+  .btn-add:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-add svg { flex-shrink: 0; }
+
+  .actions {
+    width: 100%;
+    max-width: 640px;
+    display: flex;
+    gap: 12px;
+  }
+
+  .btn-clear {
+    flex: 0 0 auto;
+    padding: 13px 20px;
+    background: var(--white);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .btn-clear:hover { background: var(--bg); }
+
+  .btn-download {
+    flex: 1;
+    padding: 13px 20px;
+    background: var(--navy);
+    color: var(--white);
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: background 0.15s, transform 0.1s;
+    letter-spacing: 0.02em;
+  }
+
+  .btn-download:hover { background: var(--navy-light); }
+  .btn-download:active { transform: scale(0.98); }
+
+  .btn-download.loading { opacity: 0.7; pointer-events: none; }
+
+  /* ─── TOAST ─── */
+  .toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: #1a2e1a;
+    color: #a8f0a8;
+    padding: 12px 24px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-weight: 600;
+    transition: transform 0.3s ease;
+    z-index: 100;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ─── DIVIDER ─── */
+  .spacer { margin-bottom: 1rem; }
+
+  @media (max-width: 520px) {
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    .card { padding: 1.25rem; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="app-header">
+    <img src="LOGOS/Logo TLAX G HORIZONTAL.png" class="header-logo" alt="Gobierno de Tlaxcala"/>
+    <img src="LOGOS/Logo_DIF.png" class="header-logo" alt="DIF Estatal Tlaxcala"/>
+    <img src="LOGOS/Untitled-1.png" class="header-logo-title" alt="Departamento de Fomento a la Salud"/>
+  </div>
+
+  <!-- CARD 1: Médico y Fecha -->
+  <div class="card">
+    <div class="card-title">Datos del médico y consulta</div>
+    <div class="grid-2" style="margin-bottom:1rem;">
+      <div class="field">
+        <label>Nombre del médico</label>
+        <input type="text" id="medico" value="Dra. Maribel Ornelas" placeholder="Nombre del médico"/>
+      </div>
+      <div class="field">
+        <label>Especialidad</label>
+        <input type="text" id="especialidad" value="Médico Ortopedista" placeholder="Especialidad"/>
+      </div>
+    </div>
+    <div class="grid-3">
+      <div class="field">
+        <label>Cédula profesional</label>
+        <input type="text" id="cedula" placeholder="Ej. 12345678"/>
+      </div>
+      <div class="field">
+        <label>Fecha</label>
+        <input type="date" id="fecha"/>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARD 2: Paciente -->
+  <div class="card">
+    <div class="card-title">Datos del paciente</div>
+    <div class="field" style="margin-bottom:1rem;">
+      <label>Nombre completo del paciente</label>
+      <input type="text" id="paciente" placeholder="Nombre completo"/>
+    </div>
+    <div class="grid-4" style="margin-bottom:1rem;">
+      <div class="field">
+        <label>Edad</label>
+        <input type="text" id="edad" placeholder="Ej. 35 años"/>
+      </div>
+      <div class="field">
+        <label>Sexo</label>
+        <div class="sexo-group">
+          <label><input type="radio" name="sexo" value="Masculino"/> M</label>
+          <label><input type="radio" name="sexo" value="Femenino"/> F</label>
+        </div>
+      </div>
+      <div class="field">
+        <label>Peso</label>
+        <input type="text" id="peso" placeholder="Ej. 72 kg"/>
+      </div>
+      <div class="field">
+        <label>Talla</label>
+        <input type="text" id="talla" placeholder="Ej. 1.70 m"/>
+      </div>
+    </div>
+    <div class="field">
+      <label>Diagnóstico / Motivo de consulta</label>
+      <input type="text" id="diagnostico" placeholder="Diagnóstico principal"/>
+    </div>
+  </div>
+
+  <!-- CARD 3: Prescripción -->
+  <div class="card">
+    <div class="rx-header">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="rx-symbol">℞</span>
+        <div class="card-title" style="margin:0;border:none;padding:0;">Prescripción</div>
+      </div>
+      <span class="rx-count" id="rx-count">1 / 10</span>
+    </div>
+
+    <div class="rx-list" id="rx-list"></div>
+
+    <button class="btn-add" id="btn-add" onclick="addLine()">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      Agregar medicamento / estudio
+    </button>
+  </div>
+
+  <!-- CARD 4: Indicaciones y próxima cita -->
+  <div class="card">
+    <div class="card-title">Indicaciones generales</div>
+    <div class="field" style="margin-bottom:1rem;">
+      <label>Indicaciones / Recomendaciones</label>
+      <textarea id="indicaciones" rows="3" placeholder="Reposo, dieta, cuidados especiales, restricciones..."></textarea>
+    </div>
+  </div>
+
+  <!-- ACTIONS -->
+  <div class="actions">
+    <button class="btn-clear" onclick="clearForm()">Limpiar</button>
+    <button class="btn-download" id="btn-download" onclick="descargarPDF()">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+      </svg>
+      Descargar receta PDF
+    </button>
+  </div>
+
+</div>
+
+<div class="toast" id="toast">✓ Receta descargada correctamente</div>
+
+<script>
+  const { jsPDF } = window.jspdf;
+
+  // ── Init ──
+  document.getElementById('fecha').valueAsDate = new Date();
+  const now = new Date();
+
+  // ── RX Lines ──
+  let rxCount = 0;
+
+  function addLine(value = '') {
+    if (rxCount >= 10) return;
+    rxCount++;
+    updateCount();
+
+    const list = document.getElementById('rx-list');
+    const item = document.createElement('div');
+    item.className = 'rx-item';
+    item.dataset.id = rxCount;
+
+    const isFirst = rxCount === 1;
+    item.innerHTML = `
+      <div class="rx-num">${rxCount}</div>
+      <input type="text" placeholder="${isFirst ? 'Ej. Paracetamol 500mg — 1 tableta cada 8 hrs por 5 días' : 'Medicamento, estudio, indicación...'}" value="${value}" autocomplete="off"/>
+      <button class="btn-remove ${isFirst ? 'hidden' : ''}" onclick="removeLine(this)" title="Eliminar">×</button>
+    `;
+    list.appendChild(item);
+    if (!isFirst) item.querySelector('input').focus();
+    document.getElementById('btn-add').disabled = rxCount >= 10;
+    renumber();
+  }
+
+  function removeLine(btn) {
+    const item = btn.closest('.rx-item');
+    item.style.opacity = '0';
+    item.style.transform = 'translateY(-6px)';
+    item.style.transition = 'all 0.15s ease';
+    setTimeout(() => {
+      item.remove();
+      rxCount--;
+      document.getElementById('btn-add').disabled = false;
+      renumber();
+      updateCount();
+    }, 150);
+  }
+
+  function renumber() {
+    document.querySelectorAll('.rx-item').forEach((item, i) => {
+      item.querySelector('.rx-num').textContent = i + 1;
+      const btn = item.querySelector('.btn-remove');
+      btn.classList.toggle('hidden', i === 0);
+    });
+  }
+
+  function updateCount() {
+    document.getElementById('rx-count').textContent = `${rxCount} / 10`;
+  }
+
+  function clearForm() {
+    document.querySelectorAll('input[type="text"], input[type="time"], textarea').forEach(el => el.value = '');
+    document.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false);
+    document.getElementById('fecha').valueAsDate = new Date();
+    const now = new Date();
+      document.getElementById('medico').value = 'Dra. Maribel Ornelas';
+    document.getElementById('especialidad').value = 'Médico Ortopedista';
+    document.getElementById('rx-list').innerHTML = '';
+    rxCount = 0;
+    addLine();
+  }
+
+  // ── Toast ──
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  // ── PDF ──
+  function getSexo() {
+    const sel = document.querySelector('input[name="sexo"]:checked');
+    return sel ? sel.value : '—';
+  }
+
+  function getRxLines() {
+    return Array.from(document.querySelectorAll('.rx-item input')).map((inp, i) => ({
+      num: i + 1,
+      text: inp.value.trim()
+    })).filter(l => l.text);
+  }
+
+  function formatDate(val) {
+    if (!val) return '—';
+    const [y, m, d] = val.split('-');
+    const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    return `${d} ${meses[parseInt(m)-1]} ${y}`;
+  }
+
+  function descargarPDF() {
+    const btn = document.getElementById('btn-download');
+    btn.classList.add('loading');
+    btn.textContent = 'Generando PDF...';
+
+    setTimeout(() => {
+      try {
+        generarPDF();
+        showToast('✓ Receta descargada correctamente');
+      } catch(e) {
+        showToast('⚠ Error al generar PDF');
+        console.error(e);
+      }
+      btn.classList.remove('loading');
+      btn.innerHTML = `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> Descargar receta PDF`;
+    }, 100);
+  }
+
+  function generarPDF() {
+    const doc = new jsPDF({ unit: 'mm', format: [215.9, 279.4] }); // carta completa
+
+    const W = 215.9;
+    const navy      = [26, 58, 92];
+    const accent    = [200, 169, 110];
+    const muted     = [107, 122, 141];
+    const textCol   = [26, 26, 46];
+    const borderCol = [208, 218, 230];
+    const ml = 12, mr = W - 12;
+    let y = 0;
+
+    // ── helpers ──────────────────────────────────────────────────────────────
+    function lbl(x, ly, text, sz) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(sz || 7);
+      doc.setTextColor(...navy);
+      doc.text(text, x, ly);
+    }
+    function uline(x1, ly, x2) {
+      doc.setDrawColor(...borderCol);
+      doc.setLineWidth(0.3);
+      doc.line(x1, ly + 0.5, x2, ly + 0.5);
+    }
+    function fval(x, ly, text, maxW, sz) {
+      if (!text) return;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(sz || 9.5);
+      doc.setTextColor(...textCol);
+      maxW ? doc.text(text, x, ly, { maxWidth: maxW }) : doc.text(text, x, ly);
+    }
+    // Dibuja un item de prescripción; ox=origen x, endX=borde derecho; retorna cy actualizado
+    function drawRxItem(item, ox, endX, cy) {
+      const textW = endX - ox - 10;
+      doc.setFillColor(...navy);
+      doc.circle(ox + 3, cy - 2, 2.5, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(255, 255, 255);
+      doc.text(String(item.num), ox + 3, cy - 0.6, { align: 'center' });
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(12);
+      doc.setTextColor(...textCol);
+      const wrapped = doc.splitTextToSize(item.text, textW);
+      doc.text(wrapped, ox + 8, cy);
+      cy += wrapped.length * 5 + 2;
+      doc.setDrawColor(...borderCol);
+      doc.setLineWidth(0.2);
+      doc.line(ox + 6, cy - 1, endX, cy - 1);
+      cy += 3;
+      return cy;
+    }
+
+    // ─── HEADER BAND ─────────────────────────────────────────────────────────
+    doc.setFillColor(237, 233, 254);
+    doc.rect(0, 0, W, 22, 'F');
+    if (_logos.tlax) {
+      const hh = 16, ww = hh * _logos.tlax.w / _logos.tlax.h;
+      doc.addImage(_logos.tlax.data, 'PNG', ml, 3, ww, hh);
+    }
+    if (_logos.dif) {
+      const hh = 16, ww = hh * _logos.dif.w / _logos.dif.h;
+      doc.addImage(_logos.dif.data, 'PNG', W / 2 - ww / 2, 3, ww, hh);
+    }
+    if (_logos.dept) {
+      const hh = 13, ww = hh * _logos.dept.w / _logos.dept.h;
+      doc.addImage(_logos.dept.data, 'PNG', mr - ww, (22 - hh) / 2, ww, hh);
+    }
+    const cedula = document.getElementById('cedula').value;
+    doc.setDrawColor(107, 33, 168);
+    doc.setLineWidth(0.5);
+    doc.line(0, 22, W, 22);
+    y = 27;
+
+    // ─── FECHA / HORA ────────────────────────────────────────────────────────
+    const fechaStr = formatDate(document.getElementById('fecha').value);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(...muted);
+    doc.text(fechaStr, mr, y, { align: 'right' });
+    y += 5;
+
+    // ─── DATOS DEL PACIENTE (20mm, fuentes -20%) ──────────────────────────────
+    doc.setDrawColor(...borderCol);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(ml, y, mr - ml, 22, 2.5, 2.5);
+
+    const r1 = y + 8;
+    lbl(16, r1, 'NOMBRE:', 8);  uline(32, r1, 133);  fval(33, r1, document.getElementById('paciente').value, 99, 10);
+    lbl(136, r1, 'SEXO:', 8);   uline(150, r1, 167);  fval(151, r1, getSexo() !== '—' ? getSexo() : '', null, 10);
+    lbl(170, r1, 'EDAD:', 8);   uline(182, r1, 200);  fval(183, r1, document.getElementById('edad').value, null, 10);
+
+    const r2 = y + 17;
+    lbl(16, r2, 'PESO:', 8);          uline(28, r2, 60);   fval(29, r2, document.getElementById('peso').value, null, 10);
+    lbl(63, r2, 'TALLA:', 8);         uline(75, r2, 108);  fval(76, r2, document.getElementById('talla').value, null, 10);
+    lbl(111, r2, 'DIAGNÓSTICO:', 8);  uline(133, r2, 200); fval(134, r2, document.getElementById('diagnostico').value, 66, 10);
+
+    y += 26; // 22mm caja + 4mm gap
+
+    // ─── ℞ SYMBOL + SEPARATOR ────────────────────────────────────────────────
+    doc.setFont('times', 'italic');
+    doc.setFontSize(18);
+    doc.setTextColor(...navy);
+    doc.text('℞', ml, y);
+    doc.setDrawColor(...borderCol);
+    doc.setLineWidth(0.4);
+    doc.line(ml + 9, y - 2, mr, y - 2);
+    y += 6;
+
+    // ─── PRESCRIPCIONES — layout dinámico ────────────────────────────────────
+    const rxLines = getRxLines();
+
+    if (rxLines.length === 0) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(...muted);
+      doc.text('Sin prescripciones registradas', ml + 4, y);
+      y += 7;
+
+    } else if (rxLines.length <= 5) {
+      // ── Una columna: 1-5 elementos ──
+      rxLines.forEach(item => { y = drawRxItem(item, ml, mr, y); });
+
+    } else {
+      // ── Dos columnas: 1-5 izquierda | 6-10 derecha ──
+      const gap   = 6;
+      const colW  = (mr - ml - gap) / 2;
+      const col2X = ml + colW + gap;
+      let y1 = y, y2 = y;
+      rxLines.slice(0, 5).forEach(item => { y1 = drawRxItem(item, ml,    ml + colW, y1); });
+      rxLines.slice(5)   .forEach(item => { y2 = drawRxItem(item, col2X, mr,        y2); });
+      // Línea divisoria vertical
+      doc.setDrawColor(...borderCol);
+      doc.setLineWidth(0.3);
+      doc.line(ml + colW + gap / 2, y - 4, ml + colW + gap / 2, Math.max(y1, y2) - 2);
+      y = Math.max(y1, y2);
+    }
+
+    y += 2;
+
+    // ─── INDICACIONES / PRÓXIMA CITA ─────────────────────────────────────────
+    // Solo se renderizan si caben antes del box de médico (regla: diseño ≤ media carta)
+    const fBoxMaxY = 120;
+    const indicaciones = document.getElementById('indicaciones').value.trim();
+
+    if (indicaciones && (fBoxMaxY - 4 - y) > 8) {
+      lbl(ml, y, 'INDICACIONES:');
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(...textCol);
+      const indLines = doc.splitTextToSize(indicaciones, mr - ml - 35);
+      doc.text(indLines, ml + 34, y);
+      y += Math.max(indLines.length * 5, 7) + 3;
+    }
+
+    // ─── MÉDICO / FIRMA BOX ───────────────────────────────────────────────────
+    const fBoxY = Math.min(Math.max(y + 4, 106), fBoxMaxY);
+    const fBoxH = 18;
+    doc.setDrawColor(...borderCol);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(ml, fBoxY, mr - ml, fBoxH, 2.5, 2.5);
+
+    lbl(ml + 4, fBoxY + 6, 'MÉDICO (A):');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(...textCol);
+    doc.text(document.getElementById('medico').value || 'Dra. Maribel Ornelas', ml + 28, fBoxY + 6);
+
+    const fr2 = fBoxY + 16;
+    lbl(ml + 4, fr2, 'CÉDULA:');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(...textCol);
+    doc.text(cedula || '—', ml + 20, fr2);
+
+    lbl(ml + 72, fr2, 'FECHA:');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(...textCol);
+    doc.text(fechaStr, ml + 85, fr2);
+
+    // FIRMA Y SELLO: línea arriba — texto abajo
+    doc.setDrawColor(...borderCol);
+    doc.setLineWidth(0.3);
+    doc.line(mr - 52, fBoxY + 11, mr - 4, fBoxY + 11);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(...navy);
+    doc.text('FIRMA Y SELLO', mr - 4, fr2, { align: 'right' });
+
+    // ─── LÍNEA ACENTO FINAL ───────────────────────────────────────────────────
+    doc.setDrawColor(...accent);
+    doc.setLineWidth(0.6);
+    doc.line(0, fBoxY + fBoxH + 1, W, fBoxY + fBoxH + 1);
+
+    const nombrePaciente = (document.getElementById('paciente').value || 'paciente').replace(/\s+/g, '_');
+    const fechaArchivo   = document.getElementById('fecha').value || 'fecha';
+    doc.save('Receta_' + nombrePaciente + '_' + fechaArchivo + '.pdf');
+  }
+
+  // ── Boot ──
+  addLine();
+
+  // Precargar logos para el PDF (canvas → base64)
+  const _logos = {};
+  [
+    { src: 'LOGOS/Logo TLAX G HORIZONTAL.png', key: 'tlax' },
+    { src: 'LOGOS/Logo_DIF.png',               key: 'dif'  },
+    { src: 'LOGOS/Untitled-1.png',             key: 'dept' }
+  ].forEach(({ src, key }) => {
+    const img = new Image();
+    img.onload = function () {
+      const c = document.createElement('canvas');
+      c.width = img.naturalWidth; c.height = img.naturalHeight;
+      c.getContext('2d').drawImage(img, 0, 0);
+      _logos[key] = { data: c.toDataURL('image/png'), w: img.naturalWidth, h: img.naturalHeight };
+    };
+    img.src = src;
+  });
+</script>
+</body>
+</html>
