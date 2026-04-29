@@ -370,6 +370,10 @@
         <input type="date" id="fecha"/>
       </div>
     </div>
+    <div class="field" style="margin-top:1rem;">
+      <label>Dirección</label>
+      <input type="text" id="direccion" value="CALLE MORELO NO.5 COL. CENTRO, TALXCALA, TLAX C.P 90000 TEL. (2464650458)" placeholder="Dirección de la clínica"/>
+    </div>
   </div>
 
   <!-- CARD 2: Paciente -->
@@ -511,8 +515,9 @@
     document.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false);
     document.getElementById('fecha').valueAsDate = new Date();
     const now = new Date();
-      document.getElementById('medico').value = 'Dra. Maribel Ornelas';
+    document.getElementById('medico').value = 'Dra. Maribel Ornelas';
     document.getElementById('especialidad').value = 'Médico Ortopedista';
+    document.getElementById('direccion').value = 'CALLE MORELO NO.5 COL. CENTRO, TALXCALA, TLAX C.P 90000 TEL. (2464650458)';
     document.getElementById('rx-list').innerHTML = '';
     rxCount = 0;
     addLine();
@@ -596,25 +601,38 @@
       maxW ? doc.text(text, x, ly, { maxWidth: maxW }) : doc.text(text, x, ly);
     }
     // Dibuja un item de prescripción; ox=origen x, endX=borde derecho; retorna cy actualizado
-    function drawRxItem(item, ox, endX, cy) {
+    function drawRxItem(item, ox, endX, cy, sz, lh) {
       const textW = endX - ox - 10;
-      doc.setFillColor(...navy);
-      doc.circle(ox + 3, cy - 2, 2.5, 'F');
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
-      doc.setTextColor(255, 255, 255);
-      doc.text(String(item.num), ox + 3, cy - 0.6, { align: 'center' });
+      const circR = sz >= 11 ? 2.5 : 2.0;
+      const numSz = sz >= 11 ? 10 : 8;
+
+      // Pre-calcular wrapping para centrar el círculo al bloque de texto
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(12);
-      doc.setTextColor(...textCol);
+      doc.setFontSize(sz);
       const wrapped = doc.splitTextToSize(item.text, textW);
+
+      // Círculo lila centrado verticalmente al bloque de texto
+      const circCY = cy - 1.5 + ((wrapped.length - 1) * lh) / 2;
+      doc.setFillColor(139, 92, 246);
+      doc.circle(ox + 3, circCY, circR, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(numSz);
+      doc.setTextColor(255, 255, 255);
+      doc.text(String(item.num), ox + 3, circCY + 1.1, { align: 'center' });
+
+      // Texto de la prescripción
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(sz);
+      doc.setTextColor(...textCol);
       doc.text(wrapped, ox + 8, cy);
-      cy += wrapped.length * 5 + 2;
-      doc.setDrawColor(...borderCol);
-      doc.setLineWidth(0.2);
-      doc.line(ox + 6, cy - 1, endX, cy - 1);
-      cy += 3;
-      return cy;
+
+      // Línea separadora lila suave — texto justo encima
+      const lineY = cy + (wrapped.length - 1) * lh + 3;
+      doc.setDrawColor(209, 196, 233);
+      doc.setLineWidth(0.3);
+      doc.line(ox, lineY, endX, lineY);
+
+      return lineY + 4;
     }
 
     // ─── HEADER BAND ─────────────────────────────────────────────────────────
@@ -638,15 +656,18 @@
     doc.line(0, 22, W, 22);
     y = 27;
 
-    // ─── FECHA / HORA ────────────────────────────────────────────────────────
+    // ─── DIRECCIÓN ────────────────────────────────────────────────────────────
     const fechaStr = formatDate(document.getElementById('fecha').value);
+    const direccion = document.getElementById('direccion').value.trim() || 'CALLE MORELO NO.5 COL. CENTRO, TALXCALA, TLAX C.P 90000 TEL. (2464650458)';
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
+    doc.setFontSize(7);
     doc.setTextColor(...muted);
-    doc.text(fechaStr, mr, y, { align: 'right' });
+    doc.text(direccion, mr, y, { align: 'right' });
     y += 5;
 
-    // ─── DATOS DEL PACIENTE (20mm, fuentes -20%) ──────────────────────────────
+    // ─── DATOS DEL PACIENTE ──────────────────────────────────────────────────
+    lbl(ml, y + 4, 'DATOS DEL PACIENTE', 9);
+    y += 6;
     doc.setDrawColor(...borderCol);
     doc.setLineWidth(0.4);
     doc.roundedRect(ml, y, mr - ml, 22, 2.5, 2.5);
@@ -661,31 +682,31 @@
     lbl(63, r2, 'TALLA:', 8);         uline(75, r2, 108);  fval(76, r2, document.getElementById('talla').value, null, 10);
     lbl(111, r2, 'DIAGNÓSTICO:', 8);  uline(133, r2, 200); fval(134, r2, document.getElementById('diagnostico').value, 66, 10);
 
-    y += 26; // 22mm caja + 4mm gap
+    y += 34; // 22mm caja + 12mm espacio para título PRESCRIPCION
 
-    // ─── ℞ SYMBOL + SEPARATOR ────────────────────────────────────────────────
-    doc.setFont('times', 'italic');
-    doc.setFontSize(18);
-    doc.setTextColor(...navy);
-    doc.text('℞', ml, y);
+    // ─── TÍTULO PRESCRIPCION + SEPARADOR ────────────────────────────────────
+    lbl(ml, y - 4, 'PRESCRIPCION', 9);
     doc.setDrawColor(...borderCol);
     doc.setLineWidth(0.4);
-    doc.line(ml + 9, y - 2, mr, y - 2);
+    doc.line(ml, y - 2, mr, y - 2);
     y += 6;
 
     // ─── PRESCRIPCIONES — layout dinámico ────────────────────────────────────
     const rxLines = getRxLines();
+    const nRx = rxLines.length;
+    const rxFontSz = nRx <= 3 ? 12 : nRx <= 5 ? 10 : 9;
+    const rxLineH  = nRx <= 3 ? 5  : nRx <= 5 ? 4.5 : 4;
 
-    if (rxLines.length === 0) {
+    if (nRx === 0) {
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7.5);
       doc.setTextColor(...muted);
       doc.text('Sin prescripciones registradas', ml + 4, y);
       y += 7;
 
-    } else if (rxLines.length <= 5) {
+    } else if (nRx <= 5) {
       // ── Una columna: 1-5 elementos ──
-      rxLines.forEach(item => { y = drawRxItem(item, ml, mr, y); });
+      rxLines.forEach(item => { y = drawRxItem(item, ml, mr, y, rxFontSz, rxLineH); });
 
     } else {
       // ── Dos columnas: 1-5 izquierda | 6-10 derecha ──
@@ -693,8 +714,8 @@
       const colW  = (mr - ml - gap) / 2;
       const col2X = ml + colW + gap;
       let y1 = y, y2 = y;
-      rxLines.slice(0, 5).forEach(item => { y1 = drawRxItem(item, ml,    ml + colW, y1); });
-      rxLines.slice(5)   .forEach(item => { y2 = drawRxItem(item, col2X, mr,        y2); });
+      rxLines.slice(0, 5).forEach(item => { y1 = drawRxItem(item, ml,    ml + colW, y1, rxFontSz, rxLineH); });
+      rxLines.slice(5)   .forEach(item => { y2 = drawRxItem(item, col2X, mr,        y2, rxFontSz, rxLineH); });
       // Línea divisoria vertical
       doc.setDrawColor(...borderCol);
       doc.setLineWidth(0.3);
@@ -704,24 +725,29 @@
 
     y += 2;
 
-    // ─── INDICACIONES / PRÓXIMA CITA ─────────────────────────────────────────
-    // Solo se renderizan si caben antes del box de médico (regla: diseño ≤ media carta)
-    const fBoxMaxY = 120;
+    // ─── INDICACIONES (centradas entre prescripciones y datos del médico) ─────
     const indicaciones = document.getElementById('indicaciones').value.trim();
+    let indLines = [];
+    let indH = 0;
+    if (indicaciones) {
+      indLines = doc.splitTextToSize(indicaciones, mr - ml - 35);
+      indH = Math.max(indLines.length * 5, 7) + 3;
+    }
 
-    if (indicaciones && (fBoxMaxY - 4 - y) > 8) {
-      lbl(ml, y, 'INDICACIONES:');
+    const fBoxY = Math.max(y + (indicaciones ? indH + 16 : 10), 132);
+
+    if (indicaciones) {
+      const indY = y + (fBoxY - y - indH) / 2;
+      lbl(ml, indY, 'INDICACIONES:');
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(10);
       doc.setTextColor(...textCol);
-      const indLines = doc.splitTextToSize(indicaciones, mr - ml - 35);
-      doc.text(indLines, ml + 34, y);
-      y += Math.max(indLines.length * 5, 7) + 3;
+      doc.text(indLines, ml + 34, indY);
     }
 
     // ─── MÉDICO / FIRMA BOX ───────────────────────────────────────────────────
-    const fBoxY = Math.min(Math.max(y + 4, 106), fBoxMaxY);
     const fBoxH = 18;
+    lbl(ml, fBoxY - 2, 'DATOS DEL MEDICO', 9);
     doc.setDrawColor(...borderCol);
     doc.setLineWidth(0.4);
     doc.roundedRect(ml, fBoxY, mr - ml, fBoxH, 2.5, 2.5);
