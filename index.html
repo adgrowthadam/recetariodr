@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Recetario — Dra. Maribel Ornelas</title>
+<title>Recetario — DRA. Maribel Cortes Ornelas</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Source+Sans+3:wght@300;400;600&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
@@ -353,7 +353,7 @@
     <div class="grid-2" style="margin-bottom:1rem;">
       <div class="field">
         <label>Nombre del médico</label>
-        <input type="text" id="medico" value="Dra. Maribel Ornelas" placeholder="Nombre del médico"/>
+        <input type="text" id="medico" value="DRA. Maribel Cortes Ornelas" placeholder="Nombre del médico"/>
       </div>
       <div class="field">
         <label>Especialidad</label>
@@ -363,7 +363,7 @@
     <div class="grid-3">
       <div class="field">
         <label>Cédula profesional</label>
-        <input type="text" id="cedula" placeholder="Ej. 12345678"/>
+        <input type="text" id="cedula" value="08781542" placeholder="Ej. 12345678"/>
       </div>
       <div class="field">
         <label>Fecha</label>
@@ -515,7 +515,7 @@
     document.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false);
     document.getElementById('fecha').valueAsDate = new Date();
     const now = new Date();
-    document.getElementById('medico').value = 'Dra. Maribel Ornelas';
+    document.getElementById('medico').value = 'DRA. Maribel Cortes Ornelas';
     document.getElementById('especialidad').value = 'Médico Ortopedista';
     document.getElementById('direccion').value = 'CALLE MORELO NO.5 COL. CENTRO, TALXCALA, TLAX C.P 90000 TEL. (2464650458)';
     document.getElementById('rx-list').innerHTML = '';
@@ -756,7 +756,7 @@
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     doc.setTextColor(...textCol);
-    doc.text(document.getElementById('medico').value || 'Dra. Maribel Ornelas', ml + 28, fBoxY + 6);
+    doc.text(document.getElementById('medico').value || 'DRA. Maribel Cortes Ornelas', ml + 28, fBoxY + 6);
 
     const fr2 = fBoxY + 16;
     lbl(ml + 4, fr2, 'CÉDULA:');
@@ -771,14 +771,11 @@
     doc.setTextColor(...textCol);
     doc.text(fechaStr, ml + 85, fr2);
 
-    // FIRMA Y SELLO: línea arriba — texto abajo
-    doc.setDrawColor(...borderCol);
-    doc.setLineWidth(0.3);
-    doc.line(mr - 52, fBoxY + 11, mr - 4, fBoxY + 11);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7);
-    doc.setTextColor(...navy);
-    doc.text('FIRMA Y SELLO', mr - 4, fr2, { align: 'right' });
+    // LOGOTIPO CED en lugar de firma y sello
+    if (_logos.ced) {
+      const hh = 15, ww = hh * _logos.ced.w / _logos.ced.h;
+      doc.addImage(_logos.ced.data, 'PNG', mr - ww - 3, fBoxY + 1.5, ww, hh);
+    }
 
     // ─── LÍNEA ACENTO FINAL ───────────────────────────────────────────────────
     doc.setDrawColor(...accent);
@@ -798,7 +795,8 @@
   [
     { src: 'LOGOS/Logo TLAX G HORIZONTAL.png', key: 'tlax' },
     { src: 'LOGOS/Logo_DIF.png',               key: 'dif'  },
-    { src: 'LOGOS/Untitled-1.png',             key: 'dept' }
+    { src: 'LOGOS/Untitled-1.png',             key: 'dept' },
+    { src: 'LOGOS/CED.png',                    key: 'ced'  }
   ].forEach(({ src, key }) => {
     const img = new Image();
     img.onload = function () {
