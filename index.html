@@ -353,7 +353,7 @@
     <div class="grid-2" style="margin-bottom:1rem;">
       <div class="field">
         <label>Nombre del médico</label>
-        <input type="text" id="medico" value="Dra. Maribel Cortez Ornelaz" placeholder="Nombre del médico"/>
+        <input type="text" id="medico" value="Dra. Maribel Cortes Ornelas" placeholder="Nombre del médico"/>
       </div>
       <div class="field">
         <label>Especialidad</label>
@@ -515,7 +515,7 @@
     document.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false);
     document.getElementById('fecha').valueAsDate = new Date();
     const now = new Date();
-    document.getElementById('medico').value = 'Dra. Maribel Cortez Ornelaz';
+    document.getElementById('medico').value = 'Dra. Maribel Cortes Ornelas';
     document.getElementById('especialidad').value = 'Medico General';
     document.getElementById('direccion').value = 'CALLE MORELO NO.5 COL. CENTRO, TALXCALA, TLAX C.P 90000 TEL. (2464650458)';
     document.getElementById('rx-list').innerHTML = '';
@@ -756,7 +756,7 @@
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     doc.setTextColor(...textCol);
-    doc.text(document.getElementById('medico').value || 'Dra. Maribel Cortez Ornelaz', ml + 28, fBoxY + 6);
+    doc.text(document.getElementById('medico').value || 'Dra. Maribel Cortes Ornelas', ml + 28, fBoxY + 6);
 
     const fr2 = fBoxY + 16;
     lbl(ml + 4, fr2, 'CÉDULA:');
